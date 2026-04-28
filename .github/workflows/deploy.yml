@@ -1,23 +1,22 @@
-name: Deploy to GCP VM
+name: Deploy
 
 on:
   push:
-    branches:
-      - dev   # change if you're using dev
+    branches: dev
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy via SSH
+      - name: Deploy to VM
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
           script: |
-            cd ~/projects/RAG_chatbot
+            cd /home/dm.varshinee/chatbot
             git pull origin main
             docker compose down
             docker compose up -d --build
