@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  push:
+    branches: dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/dm.varshinee/chatbot
+            git pull origin main
+            docker compose down
+            docker compose up -d --build

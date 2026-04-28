@@ -5,12 +5,16 @@ retriever.py — RAG Step 4
 - Cosine similarity search top-5 chunks
 """
 
+import os
 from ingest import get_embed_model, get_collection
 
 TOP_K = 5
 
+# Read Ollama URL from environment — falls back to localhost for local dev
+OLLAMA_URL   = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+OLLAMA_MODEL = "llama3.2"
+
 # ── Per-document synonym store ────────────────────────────────────
-# { doc_id: { "term": ["synonym1", "synonym2"] } }
 _doc_synonyms: dict[str, dict[str, list[str]]] = {}
 
 
@@ -18,8 +22,13 @@ def extract_synonyms_from_doc(doc_id: str, sample_text: str, mode: str, api_key:
     """
     Ask the LLM to extract domain-specific synonyms from the document.
     Stores result in _doc_synonyms[doc_id].
-    Called once per document upload.
+    Called once per document upload in background — never crashes the app.
     """
+    _doc_synonyms[doc_id] = {}
+
+    if not sample_text.strip():
+        return
+
     prompt = f"""Read the following document excerpt and extract domain-specific terms and their synonyms or related expressions used in this document.
 
 Return ONLY a JSON object like this (no explanation, no markdown):
@@ -41,7 +50,7 @@ Document excerpt:
     try:
         import json
 
-        if mode == "openai":
+        if mode == "openai" and api_key:
             from openai import OpenAI
             client = OpenAI(api_key=api_key)
             response = client.chat.completions.create(
@@ -52,7 +61,7 @@ Document excerpt:
             )
             raw = response.choices[0].message.content.strip()
 
-        elif mode == "gemini":
+        elif mode == "gemini" and api_key:
             from google import genai
             from google.genai import types
             client = genai.Client(api_key=api_key)
@@ -64,35 +73,35 @@ Document excerpt:
             raw = response.text.strip()
 
         elif mode == "local":
-            import requests
-            response = requests.post(
-                "http://localhost:11434/api/generate",
-                json={"model": "llama3.2", "prompt": prompt, "stream": False,
+            import requests as rq
+            # Uses OLLAMA_URL env var — works both locally and in Docker
+            response = rq.post(
+                OLLAMA_URL,
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
                       "options": {"temperature": 0}},
                 timeout=60
             )
             raw = response.json().get("response", "{}").strip()
+
         else:
             return
 
-        # Clean markdown fences if present
         raw = raw.replace("```json", "").replace("```", "").strip()
         synonyms = json.loads(raw)
-
-        # Normalize keys to lowercase
-        _doc_synonyms[doc_id] = {k.lower(): [s.lower() for s in v]
-                                  for k, v in synonyms.items()}
+        _doc_synonyms[doc_id] = {
+            k.lower(): [s.lower() for s in v]
+            for k, v in synonyms.items()
+            if isinstance(v, list)
+        }
         print(f"[Retriever] Extracted {len(_doc_synonyms[doc_id])} synonym groups for '{doc_id}'")
 
     except Exception as e:
-        print(f"[Retriever] Synonym extraction failed (non-critical): {e}")
+        print(f"[Retriever] Synonym extraction skipped (non-critical): {e}")
         _doc_synonyms[doc_id] = {}
 
 
 def expand_query(query: str, doc_id: str | None) -> str:
-    """
-    Expand query using synonyms extracted from the specific document.
-    """
+    """Expand query using synonyms extracted from the specific document."""
     if not doc_id or doc_id not in _doc_synonyms:
         return query
 
@@ -124,10 +133,7 @@ def retrieve(query: str, doc_id: str | None = None, top_k: int = TOP_K) -> list[
     model      = get_embed_model()
     collection = get_collection()
 
-    # Expand query with document-specific synonyms
-    expanded_query = expand_query(query, doc_id)
-
-    # BGE models use "query: " prefix
+    expanded_query  = expand_query(query, doc_id)
     query_embedding = model.encode(
         [f"query: {expanded_query}"],
         normalize_embeddings=True
