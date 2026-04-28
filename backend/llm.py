@@ -7,9 +7,9 @@ Supports two modes:
 
 import requests
 from openai import OpenAI
-
+import os 
 OPENAI_MODEL = "gpt-4o-mini"
-OLLAMA_URL   = "http://localhost:11434/api/generate"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL = "llama3.2"
 
 SYSTEM_PROMPT = """You are DocMind, a smart and knowledgeable document assistant.
