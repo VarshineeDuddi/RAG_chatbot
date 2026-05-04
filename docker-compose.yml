@@ -1,6 +1,6 @@
 services:
   backend:
-    image: varshineeduddi/docmind-backend:latest
+    image: varshineeduddi/docmind-backend:v9
     container_name: docmind-backend
     ports:
       - "8000:8000"
@@ -14,7 +14,7 @@ services:
         max-file: "3"
 
   frontend:
-    image: varshineeduddi/docmind-frontend:latest
+    image: varshineeduddi/docmind-frontend:v9
     container_name: docmind-frontend
     ports:
       - "3000:80"
