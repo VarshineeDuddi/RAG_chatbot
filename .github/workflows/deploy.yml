@@ -74,7 +74,13 @@ jobs:
           port: 22
           script: |
             cd /home/dm.varshinee/chatbot
-            git pull origin dev
+
+            # Download latest docker-compose.yml directly from GitHub
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3.raw" \
+              -o docker-compose.yml \
+              "https://api.github.com/repos/VarshineeDuddi/RAG_chatbot/contents/docker-compose.yml?ref=dev"
+
             docker compose down
             docker compose pull
             docker compose up -d
