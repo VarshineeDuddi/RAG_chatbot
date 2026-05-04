@@ -18,7 +18,7 @@ jobs:
       - name: Generate version tag
         id: version
         run: |
-          VERSION="v1.0.${{ github.run_number }}"
+          VERSION="v${{ github.run_number }}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "🏷️ Version: $VERSION"
 
