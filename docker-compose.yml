@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   backend:
-    image: varshineeduddi/docmind-backend:v7
+    image: varshineeduddi/docmind-backend:v8
     container_name: docmind-backend
     ports:
       - "8000:8000"
@@ -10,7 +10,7 @@ services:
       - OLLAMA_URL=http://host.docker.internal:11434/api/generate
 
   frontend:
-    image: varshineeduddi/docmind-frontend:v7
+    image: varshineeduddi/docmind-frontend:v8
     container_name: docmind-frontend
     ports:
       - "3000:80"
