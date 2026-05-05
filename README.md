@@ -41,7 +41,7 @@ Upload PDF / DOCX
        │
        ▼
   Split into Chunks
-  (500 chars, 50 overlap)
+  (400 chars, 75 overlap)
        │
        ▼
   Generate Embeddings
@@ -60,7 +60,7 @@ Upload PDF / DOCX
        │
        ▼
   Send context + question to LLM
-  (Gemini API or Ollama)
+  (OPEN AI or Ollama)
        │
        ▼
   Return grounded answer
